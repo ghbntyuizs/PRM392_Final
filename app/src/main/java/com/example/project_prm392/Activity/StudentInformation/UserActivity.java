@@ -54,7 +54,7 @@ public class UserActivity extends BaseActivity {
             startActivity(intent);
             finish();
         });
-
+        binding.btnGoogleMaps.setOnClickListener(v-> startActivity(new Intent(UserActivity.this,MapsActivity.class)));
         binding.btnUserHome.setOnClickListener(v -> startActivity(new Intent(UserActivity.this, MainActivity.class)));
         binding.btnUserReport.setOnClickListener(v -> {startActivity(new Intent(UserActivity.this, ReportActivity.class));});
     }

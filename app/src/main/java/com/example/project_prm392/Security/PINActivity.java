@@ -22,6 +22,7 @@ import com.example.project_prm392.Activity.Transaction.TransactionStatus.Transac
 import com.example.project_prm392.Constant.AppInfo;
 import com.example.project_prm392.Constant.Constant;
 import com.example.project_prm392.Helper.DataEncode;
+import com.example.project_prm392.Helper.TransferNotification;
 import com.example.project_prm392.databinding.ActivityPinactivityBinding;
 import com.example.project_prm392.entities.Transaction;
 import com.google.firebase.database.DataSnapshot;
@@ -46,12 +47,13 @@ public class PINActivity extends BaseActivity {
     DataEncode dataEncode = new DataEncode();
     private ProgressDialog progressDialog;
     private DatabaseReference databaseReference;
-
+    private   TransferNotification notificationHelper;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityPinactivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        notificationHelper = new TransferNotification(this);
         databaseReference = FirebaseDatabase.getInstance().getReference();
         StrictMode.ThreadPolicy policy = new
                 StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -159,7 +161,6 @@ public class PINActivity extends BaseActivity {
         Intent intent = getIntent();
         int transactionType = intent.getIntExtra("transaction_type", 0);
         int amount = intent.getIntExtra("transaction_amount", 0);
-        Log.d(TAG, "DEBUG " + amount);
         String currentTime = dataEncode.getCurrentTime();
         switch (transactionType) {
             case 1:
@@ -217,6 +218,10 @@ public class PINActivity extends BaseActivity {
         String to = preferences.getString("student_roll_number", "");
         String from = "ZaloPay";
         String category = "Nạp tiền vào ví";
+        String amount = String.valueOf(amount_top_up);
+        String receiverName = "Student";
+        String title = "Top-Up Successful";
+        String message = "Amount: +" + amount + " to your wallet";
 
         DatabaseReference reference = databaseReference.child("Student");
         Query query = reference.orderByChild("student_roll_number")
@@ -248,7 +253,7 @@ public class PINActivity extends BaseActivity {
         } else {
             newTransaction.setValue(new Transaction(newTransactionKey, from, to, category, amount_top_up, currentTime, "0"));
         }
-
+        notificationHelper.sendTransactionNotification(title, message, amount, receiverName, currentTime);
         progressDialog.dismiss();
         return newTransactionKey;
     }
@@ -257,6 +262,9 @@ public class PINActivity extends BaseActivity {
         SharedPreferences preferences = getSharedPreferences("currentStudent", MODE_PRIVATE);
         String from = preferences.getString("student_roll_number", "");
         String to = getIntent().getStringExtra("transfer_to");
+        String amount = String.valueOf(transfer_amount);
+        String title = "Transfer Successful";
+        String message = "Amount: -" + amount + " to " + to;
 
         DatabaseReference reference = databaseReference.child("Student");
         Query query_1 = reference.orderByChild("student_roll_number")
@@ -316,7 +324,7 @@ public class PINActivity extends BaseActivity {
         } else {
             newTransaction_2.setValue(new Transaction(newTransaction_2.getKey(), from, to, "Nhận tiền từ ví khác", transfer_amount, currentTime, "0"));
         }
-
+        notificationHelper.sendTransactionNotification(title, message, amount, to, currentTime);
         progressDialog.dismiss();
         return newTransactionKey;
     }
@@ -324,7 +332,10 @@ public class PINActivity extends BaseActivity {
     private String paying(int transaction_amount, String currentTime, String category, String payingType) {
         SharedPreferences preferences = getSharedPreferences("currentStudent", MODE_PRIVATE);
         String student_roll_number = preferences.getString("student_roll_number", "");
-
+        String amount = String.valueOf(transaction_amount);
+        String receiverName = "FPT University";
+        String title = "Payment Successful";
+        String message = "Amount: -" + amount + " for " + category;
         // Update student_amount in Firebase
         DatabaseReference reference = databaseReference.child("Student");
         Query query = reference.orderByChild("student_roll_number")
@@ -360,6 +371,7 @@ public class PINActivity extends BaseActivity {
         } else {
             newTransaction.setValue(new Transaction(newTransactionKey, student_roll_number, "Đại học FPT", category, transaction_amount, currentTime, "0"));
         }
+        notificationHelper.sendTransactionNotification(title, message, amount, receiverName, currentTime);
         progressDialog.dismiss();
         return newTransactionKey;
     }
@@ -410,7 +422,6 @@ public class PINActivity extends BaseActivity {
                         Intent intent1 = new Intent(PINActivity.this, MainActivity.class);
                         Toast.makeText(PINActivity.this, "Hủy thanh toán", Toast.LENGTH_SHORT).show();
                         startActivity(intent1);
-                        finish();
                     }
 
                     @Override
@@ -418,7 +429,6 @@ public class PINActivity extends BaseActivity {
                         Intent intent1 = new Intent(PINActivity.this, MainActivity.class);
                         Toast.makeText(PINActivity.this, "Lỗi thanh toánn", Toast.LENGTH_SHORT).show();
                         startActivity(intent1);
-                        finish();
                     }
                 });
             }

@@ -105,10 +105,10 @@ public class LoginActivity extends BaseActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 binding.btnLogin.setEnabled(true);
-
                 if (snapshot.exists()) {
                     for (DataSnapshot studentSnapshot : snapshot.getChildren()) {
                         Student student = studentSnapshot.getValue(Student.class);
+                        assert student != null;
                         if (student != null) {
                             if (TextUtils.isEmpty(student_password)) {
                                 Toast.makeText(LoginActivity.this, "Vui lòng nhập mật khẩu", Toast.LENGTH_SHORT).show();
@@ -122,30 +122,16 @@ public class LoginActivity extends BaseActivity {
                             }
                         }
                     }
+                } else {
+                    Toast.makeText(LoginActivity.this, "Mã số sinh viên không đúng", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("Firebase lmao 3", "Lỗi đọc dữ liệu từ Firebase: " + error.getMessage());
-
-                // Enable lại button khi có lỗi
                 binding.btnLogin.setEnabled(true);
             }
         });
-    }
-
-    private void logAllData(DataSnapshot dataSnapshot) {
-        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-            if (snapshot.hasChildren()) {
-                // Nếu có các con, tiếp tục log đệ quy
-                Log.d("FirebaseData", "Node: " + snapshot.getKey());
-                logAllData(snapshot);  // Gọi lại hàm logAllData để duyệt sâu hơn
-            } else {
-                // Log các giá trị không có con
-                Log.d("FirebaseData", snapshot.getKey() + ": " + snapshot.getValue().toString());
-            }
-        }
     }
 
 }

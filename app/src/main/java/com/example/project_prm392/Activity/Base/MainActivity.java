@@ -1,13 +1,21 @@
 package com.example.project_prm392.Activity.Base;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.project_prm392.Activity.Authentication.LoginActivity;
@@ -19,6 +27,7 @@ import com.example.project_prm392.Activity.Transaction.TopUpActivity;
 import com.example.project_prm392.Activity.Transaction.TransactionView.ListAllTransactionActivity;
 import com.example.project_prm392.Activity.Transaction.TransferActivity;
 import com.example.project_prm392.Adapter.TransactionAdapter;
+import com.example.project_prm392.Helper.TransferNotification;
 import com.example.project_prm392.databinding.ActivityMainBinding;
 import com.example.project_prm392.entities.Transaction;
 import com.google.firebase.database.ChildEventListener;
@@ -41,11 +50,16 @@ public class MainActivity extends BaseActivity {
     private final List<Transaction> transactions = new ArrayList<>();
     private DatabaseReference transactionRef;
     private TransactionAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
         SharedPreferences preferences = getSharedPreferences("currentStudent", MODE_PRIVATE);
         String currentStudentRollNumber = preferences.getString("student_roll_number", "");
         if (currentStudentRollNumber.isEmpty()) {
@@ -61,6 +75,12 @@ public class MainActivity extends BaseActivity {
         listenForTransactionChanges();
         initRecyclerView();
     }
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (!isGranted) {
+                    Toast.makeText(MainActivity.this, "Permission denied to post notifications", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     private void displayCurrentAmount(String currentStudentRollNumber) {
         DatabaseReference reference = database.getReference("Student");
@@ -95,7 +115,6 @@ public class MainActivity extends BaseActivity {
     }
 
     private void initRecyclerView() {
-        Log.d("sddasdas 3 ", String.valueOf(transactions.size()));
         adapter = new TransactionAdapter(transactions);
         binding.transactionView.setLayoutManager(new LinearLayoutManager(this));
         binding.transactionView.setAdapter(adapter);
@@ -109,7 +128,6 @@ public class MainActivity extends BaseActivity {
                 Transaction transaction = snapshot.getValue(Transaction.class);
                 if (transaction != null) {
                     transactions.add(0, transaction);
-                    Log.d("sddasdas 2 ", String.valueOf(transactions.size()));
                     Collections.sort(transactions, (t1, t2) -> {
                         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
                         try {
